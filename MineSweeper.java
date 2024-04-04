@@ -85,6 +85,7 @@ class MineSweeper {
         }
     }
 
+    //Adds mines to the playField if the player loses
     public void gameOverMines(){
             for (int bomb : bombLocations) {
                 playField[bomb/yAxis][bomb%yAxis] = "X";
@@ -208,12 +209,12 @@ class MineSweeper {
                     }
                 } else if (playField[i][j].equals("*")) {
                     playField[i][j] = field[i][j];
-                    mineMarks.remove(mineMarks.indexOf(coordinatesToValue(x, y)));
+                    mineMarks.remove(mineMarks.indexOf(coordinatesToValue(i, j)));
                 }
             }
         }
     }
-
+/*
     public void firstRound() {
         boolean firstRoundEnd = false;
         do {
@@ -253,16 +254,15 @@ class MineSweeper {
                 printPlayerMap();
             }
         } while (!firstRoundEnd);
-        System.out.println("END FIRST FREE");
     }
+
+ */
 
     public void play() {
         Scanner sc = new Scanner(System.in);
+        int moveCount = 0;
         ArrayList<Integer> bombs = new ArrayList<>();
-        for(int bomb : bombLocations) {
-            bombs.add(bomb);
-        }
-        Collections.sort(bombs);
+
         boolean continueGame = true;
         boolean win = true;
         while (continueGame) {
@@ -277,72 +277,66 @@ class MineSweeper {
             } else if (!choice.equals("mine")  && !choice.equals("free")){
                 System.out.println(choice + " is not an acceptable input!");
                 System.out.println("Please enter \"mine\" or \"free\" as your choices.");
-            }
-            else {
+            } else {
                 switch (choice) {
                     case "mine":
-                        if (playField[x][y].equals(".")) {
-                            playField[x][y] = "*";
-                            mineMarks.add(coordinatesToValue(x, y));
-                        } else if (playField[x][y].equals("*")) {
-                            playField[x][y] = ".";
-                            mineMarks.remove(mineMarks.indexOf(coordinatesToValue(x, y)));
-                        } else {
-                            System.out.println("This spot has already been revealed");
+                        switch (playField[x][y]) {
+                            case ".":
+                                playField[x][y] = "*";
+                                System.out.println("Adding Coordinate: " + "X: " + x + "Y:" + y + "Value:" + coordinatesToValue(x, y));
+                                mineMarks.add(coordinatesToValue(x, y));
+                                break;
+                            case "*":
+                                playField[x][y] = ".";
+                                mineMarks.remove(mineMarks.indexOf(coordinatesToValue(x, y)));
+                                break;
+                            default:
+                                System.out.println("This spot has already been revealed!");
                         }
                         printPlayerMap();
-                        Collections.sort(mineMarks);
-                        if(mineMarks.equals(bombs)) {
-                            win = mineMarks.equals(bombs);
-                            continueGame = false;
+                        if (moveCount != 0) {
+                            Collections.sort(mineMarks);
+                            if(mineMarks.equals(bombs)) {
+                                win = mineMarks.equals(bombs);
+                                continueGame = false;
+                            }
                         }
+
                         break;
                     case "free":
-                        if (field[x][y].equals("X")) {
-                                win = false;
-                                continueGame = false;
-                                gameOverMines();
-                        } else if (field[x][y].equals("/")) {
-                            clearSpaceRecursion(x, y);
-                        } else {
-                            playField[x][y] = field[x][y];
+                        if (moveCount == 0) {
+                            createBombCoordinates(x, y);
+                            createMinefield();
+                            System.out.println("Hidden Map");
+                            printHiddenMap();
+                            for(int bomb : bombLocations) {
+                                bombs.add(bomb);
+                            }
+                            Collections.sort(bombs);
+                        }
+                        if (playField[x][y].equals(".")) {
+                            switch (field[x][y]) {
+                                case "X":
+                                    win = false;
+                                    continueGame = false;
+                                    gameOverMines();
+                                    break;
+                                case "/":
+                                    clearSpaceRecursion(x, y);
+                                    break;
+                                default:
+                                    playField[x][y] = field[x][y];
+                                    }
+                            }
+                        moveCount++;
                         }
                         printPlayerMap();
-                        break;
                 }
             }
-        }
         if (win) {
             System.out.println("Congratulations! You found all the mines!");
         } else {
             System.out.println("You stepped on a mine and failed!");
         }
-    }
-
-    public static void main(String[] args) {
-
-        boolean continuePlay;
-        Scanner sc = new Scanner(System.in);
-        do {
-            int xAxis = 9; // Size of X Axis
-            int yAxis = 9; // Size of Y Axis
-            MineSweeper game = new MineSweeper(xAxis, yAxis);
-
-            game.setBombCount(); //Retrieves number of bombs that the user wishes to plant into the map
-            game.printPlayerMap(); //Prints an empty map since the bombs have yet to be planted
-            game.firstRound(); //Plays the first round of the game waiting for the first free spot to be chosen
-            game.play(); //Plays the rest of the game until the user wins or loses
-
-            //Ask the player if they want to play the game again
-            String answer;
-            do {
-                System.out.println("Do you want to play again? Y or N");
-                answer = sc.next();
-                continuePlay = "Y".equalsIgnoreCase(answer);
-                if (!answer.equalsIgnoreCase("Y") && !answer.equalsIgnoreCase("N"))
-                    System.out.println("Please enter Y or N as your answer.");
-            } while (!(answer.equalsIgnoreCase("Y")) && !(answer.equalsIgnoreCase("N")));
-        } while (continuePlay);
-        sc.close();
     }
 }
